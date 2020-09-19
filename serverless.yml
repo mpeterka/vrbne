@@ -1,0 +1,20 @@
+service: vrbne-py
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: eu-central-1
+  profile: martin.peterka
+
+package:
+  exclude:
+    - /*.iml
+
+functions:
+  icalendar:
+    handler: handler.icalendar
+    events:
+      - http:
+          path: icalendar
+          method: get
