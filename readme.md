@@ -12,7 +12,7 @@ Běží jako AWS Lambda
 
 ## Návod
 * [Google Kalendář](/doc/google.md)
-* [Microsoft Outlook](/doc/outlook.md)
+* ~~[Microsoft Outlook](/doc/outlook.md)~~ (nefunguje správně!)
 
 ## Kontakt
 * martin.peterka@gmail.com
