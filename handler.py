@@ -1,16 +1,20 @@
 import datetime
-import uuid
 import logging
 import re
 import urllib.request
+import uuid
 from typing import List, Tuple, Optional
+
 import pytz
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, ResultSet, Tag
 from icalendar import Calendar, Event
 
 #
 # Stahuje z http://itdev.cz/SlalomCourse/OpeningTimes.aspx a vyrábí z něho icalendar pro import do kalendáře
 #
+
+URL = "http://itdev.cz/SlalomCourse/OpeningTimes.aspx"
+TZ = pytz.timezone("Europe/Prague")
 
 
 # AWS Lambda entrypoint
@@ -42,27 +46,25 @@ class VrbneEvent:
     def __str__(self):
         return self.date.isoformat() + " " + self.timeFrom + "-" + self.timeTo + ", " + self.note
 
-    def datetime(self, time):
-        tz = pytz.timezone("Europe/Prague")
-        result = datetime.datetime.now(tz)
+    def datetime(self, time: str) -> datetime:
+        result = datetime.datetime.now(TZ)
         time = time.split(":")
         result = result.replace(day=self.date.day, month=self.date.month, year=self.date.year)
         result = result.replace(hour=int(time[0]), minute=int(time[1]))
         result = result.replace(second=0, microsecond=0)
         return result
 
-    def datetime_from(self):
+    def datetime_from(self) -> datetime:
         return self.datetime(self.timeFrom)
 
-    def datetime_to(self):
+    def datetime_to(self) -> datetime:
         return self.datetime(self.timeTo)
 
 
 # Parsuje HTML a sestavuje z něho z seznam událostí
 def get_events() -> List[VrbneEvent]:
-    url = "http://itdev.cz/SlalomCourse/OpeningTimes.aspx"
-    logging.info("Loading {0}".format(url))
-    html = urllib.request.urlopen(url).read().decode("utf-8")
+    logging.info("Loading {0}".format(URL))
+    html = urllib.request.urlopen(URL).read().decode("utf-8")
     soup = BeautifulSoup(html, features='html.parser')
     table = soup.find("table", class_="rgMasterTable")
     table_bodies = table.select("tbody")
@@ -72,13 +74,13 @@ def get_events() -> List[VrbneEvent]:
 
 
 # Nalezne události v celé řádce
-def get_events_from_row(row) -> List[VrbneEvent]:
+def get_events_from_row(row: Tag) -> List[VrbneEvent]:
     events = []
     # noinspection PyBroadException
     try:
         date = get_first_content(row, "label")
         if date is None:
-            pass # asi prázdný řádek
+            pass  # asi prázdný řádek
         note = get_first_content(row, "td[align=left]")
         hours = get_hours(row.select("td[align=center]"))
         for i in range(len(hours)):
@@ -96,7 +98,7 @@ def get_events_from_row(row) -> List[VrbneEvent]:
     return events
 
 
-def get_events_from_rows(rows) -> List[VrbneEvent]:
+def get_events_from_rows(rows: ResultSet) -> List[VrbneEvent]:
     events = []
     for row in rows:
         events.extend(get_events_from_row(row))
@@ -109,6 +111,8 @@ def get_hours(cells) -> List[Tuple[str, str]]:
     # naplnění seznamu, ořezané
     for cell in cells:
         hours.append(cell.text.strip())
+    # odstranit data bez časů
+    hours = list(filter(lambda hour: hour != '', hours))
     # pouze dopolední nebo odpolední pouštění
     if len(hours) == 2:
         return [(hours[0], hours[1])]
@@ -120,7 +124,7 @@ def get_hours(cells) -> List[Tuple[str, str]]:
 
 
 # Z řetězce "dd.mm." vyrobí datum
-def get_date(day_month) -> Tuple[str]:
+def get_date(day_month: Optional[str]) -> Tuple[str]:
     year = datetime.date.today().year
     m = re.search('([0-9]{1,2})\\.([0-9]{1,2})\\.', day_month)
     month = m.group(2)
@@ -129,15 +133,22 @@ def get_date(day_month) -> Tuple[str]:
 
 
 # vrátí textový obsah pod elementem dle selektoru a ořízne bílé znaky
-def get_first_content(element, selector) -> Optional[str]:
+def get_first_content(element: Tag, selector: str) -> Optional[str]:
     results = element.select(selector)
     for result in results:
         return result.text.strip()
     return
 
 
+def get_summary(event: VrbneEvent) -> str:
+    if event.note:
+        return "USD Vrbné: " + event.note
+    else:
+        return 'USD Vrbné'
+
+
 # Se seznamu události vyrobí iCalendar (.ics) obsah
-def ical(events) -> str:
+def ical(events: List[VrbneEvent]) -> str:
     cal = Calendar()
     cal.add('prodid', '-//vrbne-py')
     cal.add('version', '2.0')
@@ -149,10 +160,8 @@ def ical(events) -> str:
         cal_event.add("dtstamp", datetime.datetime.now())
         cal_event.add("dtstart", event.datetime_from())
         cal_event.add("dtend", event.datetime_to())
-        if event.note:
-            cal_event.add("summary", "USD Vrbné: " + event.note)
-        else:
-            cal_event.add("summary", 'USD Vrbné')
+        cal_event.add("summary", get_summary(event))
+        cal_event.add("description", URL)
         cal.add_component(cal_event)
 
     return cal.to_ical().decode("UTF-8")
@@ -161,8 +170,8 @@ def ical(events) -> str:
 # Jen pro testy bez AWS
 def main():
     events = get_events()
-#    for event in events:
-#        print(event)
+    #    for event in events:
+    #        print(event)
     print(ical(events))
 
 
