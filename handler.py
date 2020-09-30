@@ -9,6 +9,9 @@ import pytz
 from bs4 import BeautifulSoup, ResultSet, Tag
 from icalendar import Calendar, Event
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 #
 # Stahuje z http://itdev.cz/SlalomCourse/OpeningTimes.aspx a vyrábí z něho icalendar pro import do kalendáře
 #
@@ -19,15 +22,19 @@ TZ = pytz.timezone("Europe/Prague")
 
 # AWS Lambda entrypoint
 def icalendar(event, context):
+
     events = get_events()
+    body = ical(events)
 
     response = {
         "statusCode": 200,
         "headers": {
             "Content-Type": "text/calendar"
         },
-        "body": ical(events)
+        "body": body
     }
+
+    logger.debug(body)
 
     return response
 
@@ -44,7 +51,7 @@ class VrbneEvent:
     note: str = ''
 
     def __str__(self):
-        return self.date.isoformat() + " " + self.timeFrom + "-" + self.timeTo + ", " + self.note
+        return self.date.isoformat() + " " + self.timeFrom + "-" + self.timeTo + ", '" + self.note + "'"
 
     def datetime(self, time: str) -> datetime:
         result = datetime.datetime.now(TZ)
@@ -63,7 +70,7 @@ class VrbneEvent:
 
 # Parsuje HTML a sestavuje z něho z seznam událostí
 def get_events() -> List[VrbneEvent]:
-    logging.info("Loading {0}".format(URL))
+    logger.info("Loading {0}".format(URL))
     html = urllib.request.urlopen(URL).read().decode("utf-8")
     soup = BeautifulSoup(html, features='html.parser')
     table = soup.find("table", class_="rgMasterTable")
@@ -91,9 +98,10 @@ def get_events_from_row(row: Tag) -> List[VrbneEvent]:
             event.timeFrom = hour[0]
             event.timeTo = hour[1]
             event.note = note
+            logger.debug("Event found: {0}".format(event.__str__()))
             events.append(event)
     except Exception:
-        logging.exception("Nepodařilo se načíst řádek")
+        logger.exception("Nepodařilo se načíst řádek")
         pass
     return events
 
@@ -144,7 +152,7 @@ def get_summary(event: VrbneEvent) -> str:
     if event.note:
         return "USD Vrbné: " + event.note
     else:
-        return 'USD Vrbné'
+        return 'USD Vrbné ({0} - {1})'.format(event.timeFrom, event.timeTo)
 
 
 # Se seznamu události vyrobí iCalendar (.ics) obsah
@@ -156,7 +164,7 @@ def ical(events: List[VrbneEvent]) -> str:
     cal.add('description', "provoz slalomového kanálu")
     for event in events:
         cal_event = Event()
-        cal_event.add("uid", uuid.uuid1())
+        cal_event.add("uid", uuid.uuid1().__str__() + "@vrbne-py")
         cal_event.add("dtstamp", datetime.datetime.now())
         cal_event.add("dtstart", event.datetime_from())
         cal_event.add("dtend", event.datetime_to())
@@ -169,6 +177,7 @@ def ical(events: List[VrbneEvent]) -> str:
 
 # Jen pro testy bez AWS
 def main():
+    logging.basicConfig(level=logging.DEBUG)
     events = get_events()
     #    for event in events:
     #        print(event)
