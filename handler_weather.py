@@ -36,7 +36,7 @@ def set_weather(events: List[VrbneEvent]):
 
 def find_weather(event: VrbneEvent, weather: List[WeatherItem]) -> Optional[WeatherItem]:
     for w in weather:
-        if event.datetime_from() < w.date < event.datetime_to():
+        if event.datetime_from() <= w.date <= event.datetime_to():
             logger.debug("For " + event.__str__() + " found " + w.__str__() + " exactly.")
             return w
     # fallback = min(weather, key=lambda x: abs(x.date.date() - event.date))
