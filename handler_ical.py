@@ -2,9 +2,24 @@ import datetime
 import uuid
 from typing import List
 
-from handler_vrbne_event import VrbneEvent, Weather
 from handler_scrapper import URL
+from handler_vrbne_event import VrbneEvent, WeatherItem
 from icalendar import Calendar, Event
+
+
+def get_description(event: VrbneEvent) -> str:
+    desc = "* " + URL + "\n" \
+           + "* " + "http://jakoubek.cz/usd " + "\n" \
+           + "* " + "https://raftingcb.cz/ " + "\n" \
+           + "* " + "https://www.slalom.cz/ "
+    if event.weather is not None:
+        w = event.weather
+        desc += "\n\n" \
+                + "temp: {:3.0f}".format(event.weather.temp) + "°C\n" \
+                + "feels-like: {:3.0f}".format(event.weather.feels_like) + "°C\n" \
+                + w.weather_desc
+
+    return desc
 
 
 def get_summary(event: VrbneEvent) -> str:
@@ -16,7 +31,8 @@ def get_summary(event: VrbneEvent) -> str:
         result += " !!! + " + event.note
     return result
 
-def get_weather_icon(weather: Weather) -> '':
+
+def get_weather_icon(weather: WeatherItem) -> '':
     icons = {
         'Thunderstorm': '🌩️',
         'Drizzle': '☔',
@@ -42,7 +58,7 @@ def ical(events: List[VrbneEvent]) -> str:
         cal_event.add("dtstart", event.datetime_from())
         cal_event.add("dtend", event.datetime_to())
         cal_event.add("summary", get_summary(event))
-        cal_event.add("description", URL)
+        cal_event.add("description", get_description(event))
         cal.add_component(cal_event)
 
     return cal.to_ical().decode("UTF-8")

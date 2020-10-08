@@ -5,7 +5,7 @@ import urllib.request
 from datetime import datetime
 from typing import List, Optional
 
-from handler_vrbne_event import VrbneEvent, TZ, Weather
+from handler_vrbne_event import VrbneEvent, TZ, WeatherItem
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -15,24 +15,15 @@ logger.setLevel(logging.DEBUG)
 # Expected system environment WEATHER_API_KEY with API key for https://api.openweathermap.org
 #
 
-class WeatherItem:
-    date: datetime
-    feels_like: float
-    weather: str = ''
-
-    def __str__(self):
-        return self.date.isoformat() + " " + str(self.feels_like) + "°C, " + self.weather
-
 
 def set_weather(events: List[VrbneEvent]):
     weather = get_weather()
     for e in events:
         w = find_weather(e, weather)
         if w is not None:
-            e.weather = Weather()
+            e.weather = w
             e.weather.weather = w.weather
             e.weather.feels_like = w.feels_like
-
 
 def find_weather(event: VrbneEvent, weather: List[WeatherItem]) -> Optional[WeatherItem]:
     for w in weather:
@@ -56,7 +47,9 @@ def get_weather() -> List[WeatherItem]:
             for w in weather["list"]:
                 wi = WeatherItem()
                 wi.feels_like = w["main"]["feels_like"]
+                wi.temp = w["main"]["temp"]
                 wi.weather = w["weather"][0]["main"]
+                wi.weather_desc = w["weather"][0]["description"]
                 wi.date = datetime.fromtimestamp(w["dt"], tz=TZ)
                 result.append(wi)
             return result

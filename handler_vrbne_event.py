@@ -4,9 +4,20 @@ import pytz
 
 TZ = pytz.timezone("Europe/Prague")
 
-class Weather:
+class WeatherItem:
+    date: datetime
     feels_like: float
+    temp: float
     weather: str = ''
+    weather_desc: str = ''
+
+    def __str__(self):
+        return self.date.isoformat() \
+               + " " + str(self.feels_like) + " °C, " \
+               + " " + str(self.temp) + " °C, " \
+               + self.weather + ", " \
+               + self.weather_desc
+
 
 # Událost - vlastní pouštění vody
 class VrbneEvent:
@@ -18,7 +29,7 @@ class VrbneEvent:
     timeTo: str = ''
     # poznámka - nějaký tréning, závody apod.
     note: str = ''
-    weather: Weather = None
+    weather: WeatherItem = None
 
     def __str__(self):
         return self.date.isoformat() + " " + self.timeFrom + "-" + self.timeTo + ", '" + self.note + "'"
@@ -36,3 +47,5 @@ class VrbneEvent:
 
     def datetime_to(self) -> datetime:
         return self.datetime(self.timeTo)
+
+
