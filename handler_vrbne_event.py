@@ -4,19 +4,22 @@ import pytz
 
 TZ = pytz.timezone("Europe/Prague")
 
+
 class WeatherItem:
     date: datetime
     feels_like: float
     temp: float
-    weather: str = ''
-    weather_desc: str = ''
+    icon: str = ''
+    desc: str = ''
+    wind_speed: float
 
     def __str__(self):
         return self.date.isoformat() \
                + " " + str(self.feels_like) + " °C, " \
                + " " + str(self.temp) + " °C, " \
-               + self.weather + ", " \
-               + self.weather_desc
+               + self.icon + ", " \
+               + str(self.wind_speed) + " m/s, " \
+               + self.desc
 
 
 # Událost - vlastní pouštění vody

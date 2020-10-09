@@ -22,8 +22,7 @@ def set_weather(events: List[VrbneEvent]):
         w = find_weather(e, weather)
         if w is not None:
             e.weather = w
-            e.weather.weather = w.weather
-            e.weather.feels_like = w.feels_like
+
 
 def find_weather(event: VrbneEvent, weather: List[WeatherItem]) -> Optional[WeatherItem]:
     for w in weather:
@@ -48,8 +47,9 @@ def get_weather() -> List[WeatherItem]:
                 wi = WeatherItem()
                 wi.feels_like = w["main"]["feels_like"]
                 wi.temp = w["main"]["temp"]
-                wi.weather = w["weather"][0]["main"]
-                wi.weather_desc = w["weather"][0]["description"]
+                wi.wind_speed = w["wind"]["speed"]
+                wi.icon = w["weather"][0]["icon"]
+                wi.desc = w["weather"][0]["description"]
                 wi.date = datetime.fromtimestamp(w["dt"], tz=TZ)
                 result.append(wi)
             return result
