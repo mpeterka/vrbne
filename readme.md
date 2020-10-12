@@ -5,6 +5,7 @@ vyrobí icalendar pro zobrazení v kalendáři.
 Běží jako AWS Lambda
 
 ## Deploy
+(Node.js serverless)
 `sls deploy --aws-profile martin.peterka`
 
 ## endpoints
