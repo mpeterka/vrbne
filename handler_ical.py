@@ -8,18 +8,19 @@ from icalendar import Calendar, Event
 
 
 def get_description(event: VrbneEvent) -> str:
-    desc = "* " + URL + "\n" \
-           + "* " + "http://jakoubek.cz/usd " + "\n" \
-           + "* " + "https://raftingcb.cz/ " + "\n" \
-           + "* " + "https://www.slalom.cz/ "
+    desc = "(bez záruky…)\n" \
+           + "• " + URL + "\n" \
+           + "• " + "http://jakoubek.cz/usd " + "\n" \
+           + "• " + "https://raftingcb.cz " + "\n" \
+           + "• " + "https://www.slalom.cz "
     if event.weather is not None:
         w = event.weather
         desc += "\n\n" \
-                + "Počasí (" + w.date.strftime("%H.%M") + "):\n" \
-                + "Teplota:  {:3.0f}".format(event.weather.temp) + " °C\n" \
-                + "Pocitová: {:3.0f}".format(event.weather.feels_like) + " °C\n" \
-                + "Vítr:     {:3.0f}".format(event.weather.wind_speed) + " m/s\n" \
-                + w.desc
+                + "Počasí (" + w.date.strftime("%H.%M") + ")\n" \
+                + "🌡️ Teplota:  {:3.0f}".format(event.weather.temp) + " °C\n" \
+                + "🌡️ Pocitová: {:3.0f}".format(event.weather.feels_like) + " °C\n" \
+                + "🌬️ Vítr:     {:3.0f}".format(event.weather.wind_speed) + " m/s\n" \
+                + "🐀 " + w.desc
 
     return desc
 

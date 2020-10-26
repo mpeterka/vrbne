@@ -17,6 +17,9 @@ logger.setLevel(logging.DEBUG)
 
 
 def set_weather(events: List[VrbneEvent]):
+    if len(events) == 0:
+        # no events, so no weather forecast is needed
+        return
     weather = get_weather()
     for e in events:
         w = find_weather(e, weather)
