@@ -1,28 +1,49 @@
-# Provoz na USD České Vrbné - kalendář
-*Voda pro potřeby tréninků a rekreačního ježdění se pouští od 1. dubna do 31. října.*
+# Vrbné iCal Service
 
-Jen malé udělátko, které z tabulky na http://itdev.cz/SlalomCourse/OpeningTimes.aspx 
-vyrobí icalendar pro zobrazení v kalendáři.
+Tato služba poskytuje aktuální rozpis provozu slalomového kanálu v Českém Vrbném ve formátu iCalendar (`.ics`). Kalendář lze snadno importovat do Google Kalendáře, Microsoft Outlooku nebo Apple Calendar.
 
+## Funkce
+- **Automatické scrapování**: Data jsou automaticky stahována z oficiálního webu [itdev.cz](http://itdev.cz/SlalomCourse/OpeningTimes.aspx).
+- **Předpověď počasí**: Možnost zahrnout informaci o počasí přímo do názvu a popisu události.
+- **Caching**: Výstupy jsou cachovány na 1 hodinu, aby se šetřil zdrojový server.
+- **Podpora Outlooku**: Obsahuje `VTIMEZONE` pro správné zobrazení času v MS Outlooku.
+- **Docker**: Snadné nasazení pomocí Dockeru.
 
-Běží jako AWS Lambda
+## Rychlý start (Docker)
 
-## Deploy
-(Node.js serverless)
-`sls deploy --aws-profile martin.peterka`
+1. Sestavte image:
+   ```bash
+   docker build -t vrbne-ical .
+   ```
 
-## endpoints
-* GET - https://dmaz11xve5.execute-api.eu-central-1.amazonaws.com/dev/icalendar
+2. Spusťte kontejner:
+   ```bash
+   docker run -d -p 8000:8000 --name vrbne-app vrbne-ical
+   ```
 
-## Návod
-* [Google Kalendář](/doc/google.md)
-* ~~[Microsoft Outlook](/doc/outlook.md)~~ 
-  * nefunguje správně - chybí dořešit časová pásma!
+Aplikace bude dostupná na `https://karotka.peterka.name/vrbne`.
 
-## Kontakt
-* martin.peterka@gmail.com
+## API Endpointy
 
-# Ostatní
-* http://jakoubek.cz/usd
-* https://raftingcb.cz
-* https://www.slalom.cz
+### `GET /vrbne/ical`
+Vrátí iCal soubor s rozpisem.
+- **Parametry**:
+  - `weather` (bool, default: `true`): Určuje, zda se má do kalendáře přidat předpověď počasí.
+- **Příklad**: `https://karotka.peterka.name/vrbne/ical?weather=false`
+
+### `GET /`
+Zobrazí webovou stránku s návodem na přidání kalendáře do různých klientů.
+
+## Konfigurace Počasí
+Pro funkčnost počasí je nutné nastavit proměnnou prostředí `WEATHER_API_KEY` (z OpenWeatherMap). Pokud není nastavena, kalendář se vygeneruje bez informací o počasí.
+
+```bash
+docker run -d -p 8000:8000 -e WEATHER_API_KEY="vas_api_klic" vrbne-ical
+```
+
+## Vývoj a instalace bez Dockeru
+1. Nainstalujte závislosti: `pip install -r requirements.txt`
+2. Spusťte server: `python main.py`
+
+## Dokumentace
+Podrobnější návody pro konkrétní kalendáře naleznete v adresáři `/doc` nebo přímo na úvodní stránce běžící aplikace.
