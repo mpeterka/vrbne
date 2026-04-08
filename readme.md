@@ -23,6 +23,19 @@ Tato služba poskytuje aktuální rozpis provozu slalomového kanálu v Českém
 
 Aplikace bude dostupná na `https://karotka.peterka.name/vrbne`.
 
+## Nasazení za Nginx Proxy
+Pokud aplikaci provozujete za reverzní proxy (např. Nginx) pod jinou cestou než `/`, je v `main.py` nastaveno `root_path="/vrbne"`. V Nginxu je potřeba předávat hlavičky pro správnou detekci HTTPS:
+
+```nginx
+location /vrbne/ {
+    proxy_pass http://localhost:8000/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
 ## API Endpointy
 
 ### `GET /vrbne/ical`
