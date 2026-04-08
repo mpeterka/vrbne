@@ -12,7 +12,7 @@ import scrapper
 import weather
 import ical_gen
 
-app = FastAPI(title="Vrbné iCal Service", root_path="/vrbne")
+app = FastAPI(title="Vrbné iCal Service")
 
 # Security Middleware pro bezpečnostní hlavičky
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

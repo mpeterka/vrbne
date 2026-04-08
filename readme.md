@@ -24,11 +24,14 @@ Tato služba poskytuje aktuální rozpis provozu slalomového kanálu v Českém
 Aplikace bude dostupná na `https://karotka.peterka.name/vrbne`.
 
 ## Nasazení za Nginx Proxy
-Pokud aplikaci provozujete za reverzní proxy (např. Nginx) pod jinou cestou než `/`, je v `main.py` nastaveno `root_path="/vrbne"`. V Nginxu je potřeba předávat hlavičky pro správnou detekci HTTPS:
+Pokud aplikaci provozujete za reverzní proxy (např. Nginx) pod jinou cestou než `/`, existují dvě hlavní možnosti, jak to vyřešit v závislosti na vaší Nginx konfiguraci.
+
+### Možnost A: Ořezávání cesty v Nginx (Doporučeno pro vaši konfiguraci)
+Pokud váš Nginx blok vypadá takto (s lomítkem na konci `proxy_pass` a `location`):
 
 ```nginx
 location /vrbne/ {
-    proxy_pass http://localhost:8000/;
+    proxy_pass http://vrbne_backend/;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -36,9 +39,27 @@ location /vrbne/ {
 }
 ```
 
+V tomto případě Nginx **ořeže** prefix `/vrbne/` a aplikace uvidí požadavky jako `/` nebo `/ical`.
+**Nastavení Dockeru:** Aplikaci spusťte normálně bez parametru `--root-path`. Toto je nyní výchozí nastavení v `Dockerfile`.
+
+### Možnost B: Ponechání cesty (Transparentní proxy)
+Pokud váš Nginx blok vypadá takto (bez lomítka na konci):
+
+```nginx
+location /vrbne {
+    proxy_pass http://vrbne_backend;
+    ...
+}
+```
+
+V tomto případě musí aplikace vědět, že běží pod prefixem.
+**Nastavení Dockeru:** Přidejte parametr `--root-path /vrbne` do spouštěcího příkazu (nebo jej vraťte do `Dockerfile`).
+
+> **Tip**: Pro správnou funkci automatické detekce protokolu (https) a adresy v dokumentaci ponechte v Nginxu hlavičky `X-Forwarded-Proto $scheme` a v uvicornu parametry `--proxy-headers --forwarded-allow-ips "*"`.
+
 ## API Endpointy
 
-### `GET /vrbne/ical`
+### `GET /ical`
 Vrátí iCal soubor s rozpisem.
 - **Parametry**:
   - `weather` (bool, default: `true`): Určuje, zda se má do kalendáře přidat předpověď počasí.
