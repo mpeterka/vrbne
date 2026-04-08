@@ -12,7 +12,7 @@ import scrapper
 import weather
 import ical_gen
 
-app = FastAPI(title="Vrbné iCal Service")
+app = FastAPI(title="Vrbné iCal Service", root_path="/vrbne")
 
 # Security Middleware pro bezpečnostní hlavičky
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -22,7 +22,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; img-src 'self' data:;"
+        response.headers["Content-Security-Policy"] = "default-src 'self' https:; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; img-src 'self' data:;"
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
@@ -77,7 +77,8 @@ async def index(request: Request):
             with open(path, "r", encoding="utf-8") as f:
                 md_content = f.read()
                 # Oprava cest k obrázkům pro statické servírování
-                md_content = md_content.replace("](", "](/static/")
+                # Používáme relativní cestu k aktuálnímu mountu, aby to fungovalo i za proxy
+                md_content = md_content.replace("](", "](static/")
                 html = markdown.markdown(md_content)
                 content += f"<section>{html}</section><hr>"
 
