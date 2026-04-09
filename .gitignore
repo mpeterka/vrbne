@@ -9,3 +9,4 @@ node_modules/
 *.swo
 *~
 .claude/settings.local.json
+dist
