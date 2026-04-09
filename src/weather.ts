@@ -53,7 +53,6 @@ export async function fetchWeather(): Promise<WeatherItem[]> {
 
 export function assignWeather(events: VrbneEvent[], weather: WeatherItem[]): void {
   for (const event of events) {
-    // We need to convert event to VrbneEventClass if it's not already
     const startDt = DateTime.fromISO(
       `${event.date}T${event.time_from}:00`,
       { zone: TZ }
@@ -63,15 +62,24 @@ export function assignWeather(events: VrbneEvent[], weather: WeatherItem[]): voi
       { zone: TZ }
     );
 
-    // Find the closest forecast that falls within the interval
-    let found: WeatherItem | null = null;
+    // Find the closest forecast (OpenWeatherMap provides 3-hour steps)
+    // We look for a forecast that is within 90 minutes of the event's start
+    let closest: WeatherItem | null = null;
+    let minDiffMinutes = Infinity;
+
     for (const w of weather) {
-      if (w.date >= startDt && w.date <= endDt) {
-        found = w;
-        break;
+      const diffMinutes = Math.abs(w.date.diff(startDt, 'minutes').minutes);
+      if (diffMinutes < minDiffMinutes) {
+        minDiffMinutes = diffMinutes;
+        closest = w;
       }
     }
 
-    event.weather = found || undefined;
+    // Only assign if the forecast is reasonably close (e.g., within 2 hours of start)
+    if (closest && minDiffMinutes <= 120) {
+      event.weather = closest;
+    } else {
+      console.log(`[Weather] No close forecast found for event ${event.date} ${event.time_from} (min diff: ${minDiffMinutes === Infinity ? 'N/A' : Math.round(minDiffMinutes)}m)`);
+    }
   }
 }

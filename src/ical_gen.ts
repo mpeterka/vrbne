@@ -1,6 +1,6 @@
+import crypto from 'crypto';
 import IcalGenerator from 'ical-generator';
 import { DateTime } from 'luxon';
-import { v4 as uuidv4 } from 'uuid';
 import { VrbneEvent } from './models.js';
 
 const TZ = 'Europe/Prague';
@@ -43,13 +43,19 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
       description += `☁️ ${w.desc}`;
     }
 
+    // Generate a deterministic ID based on date and time
+    const eventIdSource = `${event.date}-${event.time_from}-${event.time_to}`;
+    const eventId = crypto.createHash('sha1').update(eventIdSource).digest('hex');
+
     cal.createEvent({
-      id: uuidv4(),
+      id: eventId,
       summary,
       description,
       start: startDt.toJSDate(),
       end: endDt.toJSDate(),
-      timestamp: DateTime.now().toJSDate(),
+      // Use the start date of the event as the timestamp (DTSTAMP)
+      // to avoid triggering updates in calendar apps just because the generation time changed.
+      timestamp: startDt.toJSDate(),
     });
   }
 
