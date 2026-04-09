@@ -10,9 +10,9 @@ const TZ = 'Europe/Prague';
 
 export function createIcal(events: VrbneEvent[], includeWeather: boolean = true): string {
   const cal = new (IcalGenerator as any)({
-    prodId: '-//vrbne-docker//NONSGML v1.0//EN',
-    name: 'Kanál České Vrbné',
-    timezone: TZ,
+    prodId: '-//vrbne-ts',
+    name: 'kanál České Vrbné',
+    description: 'provoz slalomového kanálu',
   });
 
   for (const event of events) {
@@ -20,7 +20,7 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
 
     if (includeWeather && event.weather) {
       const weatherIcon = getWeatherIcon(event.weather.icon);
-      summary += ` ${weatherIcon}${Math.round(event.weather.feels_like)}°C`;
+      summary += ` ${weatherIcon} ${Math.round(event.weather.feels_like)}°C`;
     }
 
     if (event.note) {
@@ -36,7 +36,7 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
       { zone: TZ }
     );
 
-    let description = 'Provoz slalomového kanálu\nZdroj: http://itdev.cz/SlalomCourse/OpeningTimes.aspx';
+    let description = '(bez záruky…)\n• http://itdev.cz/SlalomCourse/OpeningTimes.aspx\n• http://jakoubek.cz/usd \n• https://raftingcb.cz \n• https://www.slalom.cz';
 
     if (includeWeather && event.weather) {
       const w = event.weather;
@@ -48,23 +48,46 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
 
     // Generate a deterministic ID based on date and time
     const eventIdSource = `${event.date}-${event.time_from}-${event.time_to}`;
-    const eventId = crypto.createHash('sha1').update(eventIdSource).digest('hex');
+    const eventId = crypto.createHash('sha1').update(eventIdSource).digest('hex') + '@vrbne-ts';
 
     const eventObj = cal.createEvent({
       id: eventId,
       summary,
       description,
-      start: startDt.toJSDate(),
-      end: endDt.toJSDate(),
+      start: startDt,
+      end: endDt,
       timezone: TZ,
-      // Use the start date of the event as the timestamp (DTSTAMP)
-      // to avoid triggering updates in calendar apps just because the generation time changed.
-      timestamp: startDt.toUTC().toJSDate(),
+      timestamp: DateTime.now().toUTC().toJSDate(),
     });
-    eventObj.timezone(TZ);
   }
 
-  return cal.toString().replace(/\r\n/g, '\n');
+  let output = cal.toString();
+  output = output.replace('PRODID:--//vrbne-py', 'PRODID:-//vrbne-py');
+  
+  // Extract all lines
+  const lines = output.split(/\r?\n/);
+  const newLines: string[] = [];
+  
+  for (const line of lines) {
+    if (line.startsWith('X-WR-CALNAME:')) continue;
+    if (line.startsWith('X-WR-CALDESC:')) {
+      newLines.push('DESCRIPTION:provoz slalomového kanálu');
+      newLines.push('NAME:kanál České Vrbné');
+      continue;
+    }
+    if (line.startsWith('NAME:')) continue; // Skip the library's NAME
+    if (line.startsWith('X-WR-TIMEZONE:')) continue;
+    if (line.startsWith('TIMEZONE-ID:')) continue;
+    
+    let processedLine = line;
+    processedLine = processedLine.replace(/DTSTART;TZID=Europe\/Prague:(\d+T\d+)/g, 'DTSTART;TZID=Europe/Prague;VALUE=DATE-TIME:$1');
+    processedLine = processedLine.replace(/DTEND;TZID=Europe\/Prague:(\d+T\d+)/g, 'DTEND;TZID=Europe/Prague;VALUE=DATE-TIME:$1');
+    processedLine = processedLine.replace(/DTSTAMP:(\d+T\d+)Z/g, 'DTSTAMP;VALUE=DATE-TIME:$1Z');
+    
+    newLines.push(processedLine);
+  }
+
+  return newLines.join('\n').replace(/\n\n+/g, '\n');
 }
 
 function getWeatherIcon(iconCode: string): string {
