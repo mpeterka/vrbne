@@ -57,6 +57,9 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
       // to avoid triggering updates in calendar apps just because the generation time changed.
       timestamp: startDt.toJSDate(),
     });
+    // This is a workaround for ical-generator 7.0 not including TZID with toJSDate()
+    // unless explicitly set on the event.
+    (cal.events()[cal.events().length - 1] as any).timezone(TZ);
   }
 
   return cal.toString();
