@@ -101,6 +101,9 @@ app.get('/', async (req: Request, res: Response) => {
 
     // Get absolute URL for iCal endpoint
     const icalUrl = `${protocol}://${host}${prefix}/ical`.replace(/\/+/g, '/').replace(':/', '://');
+    
+    // Get absolute URL for favicon
+    const faviconUrl = `${protocol}://${host}${prefix}/favicon.ico`.replace(/\/+/g, '/').replace(':/', '://');
 
     for (const filename of files) {
       const filePath = path.join(DOC_DIR, filename);
@@ -133,7 +136,7 @@ app.get('/', async (req: Request, res: Response) => {
       }
     }
 
-    res.render('index', { content, ical_url: icalUrl });
+    res.render('index', { content, ical_url: icalUrl, favicon_url: faviconUrl });
   } catch (error) {
     console.error('Error rendering index:', error);
     res.status(500).send('Error rendering page');
