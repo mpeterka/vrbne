@@ -95,7 +95,7 @@ async def index(request: Request):
     files = ["readme.md", "google.md", "outlook.md"]
     
     # Získání základní URL pro statické soubory s ohledem na root_path
-    static_url = request.url_for("static", path="").rstrip("/")
+    static_url = str(request.url_for("static", path="")).rstrip("/")
     
     for filename in files:
         path = os.path.join(DOC_DIR, filename)
