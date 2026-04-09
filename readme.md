@@ -6,7 +6,6 @@ Tato služba poskytuje aktuální rozpis provozu slalomového kanálu v Českém
 - **Automatické scrapování**: Data jsou automaticky stahována z oficiálního webu [itdev.cz](http://itdev.cz/SlalomCourse/OpeningTimes.aspx).
 - **Předpověď počasí**: Možnost zahrnout informaci o počasí přímo do názvu a popisu události.
 - **Caching**: Výstupy jsou cachovány na 1 hodinu, aby se šetřil zdrojový server.
-- **Podpora Outlooku**: Obsahuje `VTIMEZONE` pro správné zobrazení času v MS Outlooku.
 - **Docker**: Snadné nasazení pomocí Dockeru.
 
 ## Rychlý start (Docker)
@@ -76,8 +75,8 @@ docker run -d -p 8000:8000 -e WEATHER_API_KEY="vas_api_klic" vrbne-ical
 ```
 
 ## Vývoj a instalace bez Dockeru
-1. Nainstalujte závislosti: `pip install -r requirements.txt`
-2. Spusťte server: `python main.py`
+1. Nainstalujte závislosti: `npm install`
+2. Spusťte server: `npm run dev`
 
 ## Dokumentace
 Podrobnější návody pro konkrétní kalendáře naleznete v adresáři `/doc` nebo přímo na úvodní stránce běžící aplikace.

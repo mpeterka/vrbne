@@ -1,6 +1,6 @@
 # Microsoft Outlook
 
-Díky implementaci `VTIMEZONE` nyní Microsoft Outlook správně interpretuje časovou zónu (Evropa/Praha).
+TODO: nestestována práce s časovou zónou.
 
 ## Postup přidání
 

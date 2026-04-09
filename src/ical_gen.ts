@@ -9,7 +9,6 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
   const cal = new (IcalGenerator as any)({
     prodId: '-//vrbne-docker//NONSGML v1.0//EN',
     name: 'Kanál České Vrbné',
-    timezone: TZ,
   });
 
   for (const event of events) {
@@ -27,11 +26,11 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
     const startDt = DateTime.fromISO(
       `${event.date}T${event.time_from}:00`,
       { zone: TZ }
-    );
+    ).toUTC();
     const endDt = DateTime.fromISO(
       `${event.date}T${event.time_to}:00`,
       { zone: TZ }
-    );
+    ).toUTC();
 
     let description = 'Provoz slalomového kanálu\nZdroj: http://itdev.cz/SlalomCourse/OpeningTimes.aspx';
 
@@ -51,13 +50,12 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
       id: eventId,
       summary,
       description,
-      start: startDt,
-      end: endDt,
+      start: startDt.toJSDate(),
+      end: endDt.toJSDate(),
       // Use the start date of the event as the timestamp (DTSTAMP)
       // to avoid triggering updates in calendar apps just because the generation time changed.
       timestamp: startDt.toJSDate(),
     });
-    eventObj.timezone(TZ);
   }
 
   return cal.toString();
