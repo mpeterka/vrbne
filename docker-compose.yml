@@ -1,33 +1,35 @@
 version: '3.8'
 
 services:
-  vrbne:
+  vrbne-app:
     build: .
-    container_name: vrbne
-    ports:
-      - "8000:8000"
+    container_name: vrbne-app
     environment:
-      - WEATHER_API_KEY=
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
+      - PORT=8000
     networks:
-      - vrbne-net
+      - vrbne-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
       timeout: 3s
       retries: 3
+    restart: unless-stopped
 
   nginx:
     image: nginx:alpine
     container_name: vrbne-nginx
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
-      - vrbne-net
+      - vrbne-network
     depends_on:
-      - vrbne
+      - vrbne-app
+    restart: unless-stopped
 
 networks:
-  vrbne-net:
+  vrbne-network:
     driver: bridge

@@ -1,30 +1,38 @@
-FROM python:3.11-slim
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Závislosti
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
 
-# Zdrojový kód
-COPY . .
+# Install dependencies
+RUN npm ci
 
-# Výchozí port pro FastAPI
-EXPOSE 8000
+# Copy source code
+COPY src/ ./src/
+COPY templates/ ./templates/
+COPY doc/ ./doc/
 
-# Proměnné prostředí
-ENV WEATHER_API_KEY=""
-ENV PYTHONUNBUFFERED=1
+# Build TypeScript
+RUN npm run build
 
-# Nainstalovat curl pro healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+# Remove dev dependencies
+RUN npm ci --only=production
 
-# Zdravotní kontrola (Healthcheck)
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8000/ || exit 1
 
-# Použití neprivilegovaného uživatele pro bezpečnost
-RUN useradd -m vrbneuser && chown -R vrbneuser:vrbneuser /app
+# Use non-root user for security
+RUN addgroup -g 1001 -S vrbneuser && adduser -S vrbneuser -u 1001
 USER vrbneuser
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+# Expose port
+EXPOSE 8000
+
+# Start application
+CMD ["npm", "start"]

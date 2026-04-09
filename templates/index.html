@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vrbné iCal Service</title>
-    <link rel="icon" href="{{ url_for('favicon') }}" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico" type="image/svg+xml">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
         :root { --primary-color: #0056b3; --bg-light: #f8f9fa; }
@@ -40,7 +40,7 @@
                     <div class="card-body px-4 py-4">
                         <p class="text-center mb-4">Zkopírujte tuto URL adresu do vašeho kalendářového klienta (Google, Outlook, Apple):</p>
                         <div class="copy-box">
-                            <code id="icalUrl"></code>
+                            <code id="icalUrl"><%= ical_url %></code>
                             <button class="btn-copy" onclick="copyToClipboard()">Kopírovat URL</button>
                         </div>
                         <div class="text-center mt-3">
@@ -50,7 +50,7 @@
                 </div>
 
                 <div id="documentation">
-                    {{ content | safe }}
+                    <%- content %>
                 </div>
 
                 <div class="footer">
@@ -61,11 +61,6 @@
     </div>
 
     <script>
-        // Použijeme absolutní URL předané přímo z backendu
-        const absoluteIcalUrl = "{{ ical_url }}";
-        
-        document.getElementById('icalUrl').innerText = absoluteIcalUrl;
-
         function copyToClipboard() {
             const text = document.getElementById('icalUrl').innerText;
             navigator.clipboard.writeText(text).then(() => {
