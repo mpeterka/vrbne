@@ -23,12 +23,17 @@ RUN npm ci --only=production
 # Install curl for healthcheck
 RUN apk add --no-cache curl
 
+# Create non-root user before changing ownership
+RUN addgroup -g 1001 -S vrbneuser && adduser -S vrbneuser -u 1001
+
+# Fix ownership for all files so vrbneuser can read them
+RUN chown -R vrbneuser:vrbneuser /app
+
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8000/ || exit 1
 
 # Use non-root user for security
-RUN addgroup -g 1001 -S vrbneuser && adduser -S vrbneuser -u 1001
 USER vrbneuser
 
 # Expose port
