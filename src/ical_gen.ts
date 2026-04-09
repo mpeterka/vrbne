@@ -2,6 +2,9 @@ import crypto from 'crypto';
 import IcalGenerator from 'ical-generator';
 import { DateTime } from 'luxon';
 import { VrbneEvent } from './models.js';
+import * as scrapper from './scrapper.js';
+import * as weather from './weather.js';
+import { fileURLToPath } from 'url';
 
 const TZ = 'Europe/Prague';
 
@@ -9,6 +12,7 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
   const cal = new (IcalGenerator as any)({
     prodId: '-//vrbne-docker//NONSGML v1.0//EN',
     name: 'Kanál České Vrbné',
+    timezone: TZ,
   });
 
   for (const event of events) {
@@ -26,11 +30,11 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
     const startDt = DateTime.fromISO(
       `${event.date}T${event.time_from}:00`,
       { zone: TZ }
-    ).toUTC();
+    );
     const endDt = DateTime.fromISO(
       `${event.date}T${event.time_to}:00`,
       { zone: TZ }
-    ).toUTC();
+    );
 
     let description = 'Provoz slalomového kanálu\nZdroj: http://itdev.cz/SlalomCourse/OpeningTimes.aspx';
 
@@ -52,13 +56,15 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
       description,
       start: startDt.toJSDate(),
       end: endDt.toJSDate(),
+      timezone: TZ,
       // Use the start date of the event as the timestamp (DTSTAMP)
       // to avoid triggering updates in calendar apps just because the generation time changed.
-      timestamp: startDt.toJSDate(),
+      timestamp: startDt.toUTC().toJSDate(),
     });
+    eventObj.timezone(TZ);
   }
 
-  return cal.toString();
+  return cal.toString().replace(/\r\n/g, '\n');
 }
 
 function getWeatherIcon(iconCode: string): string {
@@ -84,4 +90,20 @@ function getWeatherIcon(iconCode: string): string {
   };
 
   return icons[iconCode] || '';
+}
+
+async function main() {
+  try {
+    const events = await scrapper.fetchEvents();
+    const weatherData = await weather.fetchWeather();
+    weather.assignWeather(events, weatherData);
+    const ical = createIcal(events, true);
+    console.log(ical);
+  } catch (error) {
+    console.error('Error in main:', error);
+  }
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main();
 }

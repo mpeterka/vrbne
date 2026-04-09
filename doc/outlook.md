@@ -1,6 +1,6 @@
 # Microsoft Outlook
 
-TODO: nestestována práce s časovou zónou.
+Díky implementaci časové zóny `Europe/Prague` nyní Microsoft Outlook správně interpretuje čas a přizpůsobuje ho nastavení vašeho systému.
 
 ## Postup přidání
 

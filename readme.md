@@ -6,6 +6,7 @@ Tato služba poskytuje aktuální rozpis provozu slalomového kanálu v Českém
 - **Automatické scrapování**: Data jsou automaticky stahována z oficiálního webu [itdev.cz](http://itdev.cz/SlalomCourse/OpeningTimes.aspx).
 - **Předpověď počasí**: Možnost zahrnout informaci o počasí přímo do názvu a popisu události.
 - **Caching**: Výstupy jsou cachovány na 1 hodinu, aby se šetřil zdrojový server.
+- **Podpora všech klientů**: Použití časové zóny `Europe/Prague` zajišťuje správné zobrazení času v Google Kalendáři, Outlooku i Apple Calendar.
 - **Docker**: Snadné nasazení pomocí Dockeru.
 
 ## Rychlý start (Docker)
