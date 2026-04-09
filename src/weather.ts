@@ -12,10 +12,8 @@ export async function fetchWeather(): Promise<WeatherItem[]> {
     return [];
   }
 
-  const url = `https://api.openweathermap.org/data/2.5/forecast?id=${CITY_ID}&APPID=***&lang=cz&units=metric`;
-
   try {
-    console.log(`[Weather] Fetching forecast for city ${CITY_ID}`);
+    console.log(`[Weather] Fetching forecast`);
     const response = await axios.get(
       `https://api.openweathermap.org/data/2.5/forecast?id=${CITY_ID}&APPID=${API_KEY}&lang=cz&units=metric`,
       { timeout: 10000 }
