@@ -85,11 +85,22 @@ app.get('/', async (req: Request, res: Response) => {
     // Get the base URL for static files, considering proxy
     const protocol = req.get('x-forwarded-proto') || req.protocol;
     const host = req.get('x-forwarded-host') || req.get('host') || '';
-    const basePath = req.baseUrl || '/';
-    const staticUrl = `${protocol}://${host}${basePath}static`.replace(/\/+/g, '/').replace(':/', '://');
+    
+    // Pro vrbne - pokud víme, že běžíme pod /vrbne a proxy nám neposílá X-Forwarded-Prefix, ale posílá Host.
+    // Předpokládáme, že root_path by mohl být /vrbne, stejně jako v Python verzi.
+    let prefix = req.get('x-forwarded-prefix') || '';
+    if (!prefix && req.get('x-forwarded-host')) {
+        prefix = '/vrbne';
+    }
+    
+    // Zajistíme, že prefix začíná lomítkem a nekončí jím, pokud to není jen /
+    if (prefix && !prefix.startsWith('/')) prefix = '/' + prefix;
+    if (prefix.endsWith('/') && prefix !== '/') prefix = prefix.slice(0, -1);
+
+    const staticUrl = `${protocol}://${host}${prefix}/static`.replace(/\/+/g, '/').replace(':/', '://');
 
     // Get absolute URL for iCal endpoint
-    const icalUrl = `${protocol}://${host}${basePath}ical`.replace(/\/+/g, '/').replace(':/', '://');
+    const icalUrl = `${protocol}://${host}${prefix}/ical`.replace(/\/+/g, '/').replace(':/', '://');
 
     for (const filename of files) {
       const filePath = path.join(DOC_DIR, filename);
