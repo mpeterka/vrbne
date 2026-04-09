@@ -4,14 +4,21 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+COPY tsconfig.json ./
 
-# Install production dependencies only
-RUN npm ci --omit=dev
+# Install all dependencies (including dev for build)
+RUN npm ci
 
-# Copy pre-built application
-COPY dist/ ./dist/
+# Copy source code
+COPY src/ ./src/
 COPY templates/ ./templates/
 COPY doc/ ./doc/
+
+# Build TypeScript (nebo může být prebuildované z CI/CD)
+RUN npm run build || echo "dist/ already exists from CI/CD"
+
+# Remove dev dependencies
+RUN npm prune --omit=dev
 
 # Install curl for healthcheck
 RUN apk add --no-cache curl

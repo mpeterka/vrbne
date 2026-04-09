@@ -1,4 +1,5 @@
 node_modules/
+dist/
 *.log
 .env
 .env.local
@@ -9,4 +10,6 @@ node_modules/
 *.swo
 *~
 .claude/settings.local.json
-dist
+
+dist/
+
