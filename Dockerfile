@@ -4,21 +4,14 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY tsconfig.json ./
 
-# Install dependencies
-RUN npm ci
+# Install production dependencies only
+RUN npm ci --omit=dev
 
-# Copy source code
-COPY src/ ./src/
+# Copy pre-built application
+COPY dist/ ./dist/
 COPY templates/ ./templates/
 COPY doc/ ./doc/
-
-# Build TypeScript
-RUN npm run build
-
-# Remove dev dependencies
-RUN npm ci --only=production
 
 # Install curl for healthcheck
 RUN apk add --no-cache curl
