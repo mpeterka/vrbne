@@ -16,25 +16,6 @@ import ical_gen
 
 app = FastAPI(title="Vrbné iCal Service")
 
-# Middleware pro podporu X-Forwarded-Prefix (proxy na subpath)
-class ProxyMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        # Nginx konfigurace v issue_description: location /vrbne/ { proxy_pass $vrbne_backend/; ... }
-        # S proxy_pass končícím lomítkem a location končící lomítkem, nginx ořízne /vrbne/ z cesty.
-        # Pokud chceme, aby FastAPI vědělo o svém mountu, musíme nastavit root_path.
-        
-        forwarded_prefix = request.headers.get("X-Forwarded-Prefix")
-        if forwarded_prefix:
-            request.scope["root_path"] = forwarded_prefix
-        elif request.headers.get("X-Forwarded-Host"):
-            # Speciální případ pro vrbne - pokud víme, že běžíme pod /vrbne
-            # a proxy nám neposílá X-Forwarded-Prefix, ale posílá Host.
-            # Předpokládáme, že root_path by mohl být /vrbne
-            request.scope["root_path"] = "/vrbne"
-
-        return await call_next(request)
-
-app.add_middleware(ProxyMiddleware)
 
 # Security Middleware pro bezpečnostní hlavičky
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -92,7 +73,7 @@ async def index(request: Request):
     # Pro jednoduchost spojíme vše do jedné stránky
     content = ""
     files = ["readme.md", "google.md", "outlook.md"]
-    
+
     # Získání základní URL pro statické soubory s ohledem na root_path
     static_url = str(request.url_for("static", path="")).rstrip("/")
     # Získání absolutní URL pro iCal endpoint, aby se v šabloně nezobrazoval špatně za proxy

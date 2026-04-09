@@ -146,3 +146,5 @@ cython_debug/
 
 # Idea HTTP client
 http-client.private.env.json
+
+.claude/settings.local.json

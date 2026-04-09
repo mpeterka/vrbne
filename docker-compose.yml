@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  vrbne:
+    build: .
+    container_name: vrbne
+    ports:
+      - "8000:8000"
+    environment:
+      - WEATHER_API_KEY=
+    networks:
+      - vrbne-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    container_name: vrbne-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - vrbne-net
+    depends_on:
+      - vrbne
+
+networks:
+  vrbne-net:
+    driver: bridge
