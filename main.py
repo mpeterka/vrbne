@@ -26,13 +26,12 @@ class ProxyMiddleware(BaseHTTPMiddleware):
         forwarded_prefix = request.headers.get("X-Forwarded-Prefix")
         if forwarded_prefix:
             request.scope["root_path"] = forwarded_prefix
-        elif "/vrbne/" in request.scope.get("root_path", ""):
-            # Možná je root_path už nastavená přes uvicorn --root-path
-            pass
+        elif request.headers.get("X-Forwarded-Host"):
+            # Speciální případ pro vrbne - pokud víme, že běžíme pod /vrbne
+            # a proxy nám neposílá X-Forwarded-Prefix, ale posílá Host.
+            # Předpokládáme, že root_path by mohl být /vrbne
+            request.scope["root_path"] = "/vrbne"
 
-        # Zajištění, že request.url_for generuje správné URL i při proxy_pass bez prefixu
-        # Pokud jsme za proxy a prefix chybí v cestě, ale víme o něm, FastAPI ho přidá díky root_path.
-        
         return await call_next(request)
 
 app.add_middleware(ProxyMiddleware)
@@ -96,6 +95,8 @@ async def index(request: Request):
     
     # Získání základní URL pro statické soubory s ohledem na root_path
     static_url = str(request.url_for("static", path="")).rstrip("/")
+    # Získání absolutní URL pro iCal endpoint, aby se v šabloně nezobrazoval špatně za proxy
+    ical_url = str(request.url_for("get_ical"))
     
     for filename in files:
         path = os.path.join(DOC_DIR, filename)
@@ -108,6 +109,11 @@ async def index(request: Request):
                 def replace_path(match):
                     prefix = match.group(1)
                     url = match.group(2)
+                    
+                    # Pokud je to odkaz na jeden z našich dokumentačních markdownů, změníme ho na kotvu
+                    if url in files:
+                        return f"{prefix}(#{url})"
+                    
                     if url.startswith(("http://", "https://", "/")):
                         return f"{prefix}({url})"
                     return f"{prefix}({static_url}/{url})"
@@ -115,12 +121,12 @@ async def index(request: Request):
                 md_content = re.sub(r"(!?\[.*?\])\((.*?)\)", replace_path, md_content)
                 
                 html = markdown.markdown(md_content)
-                content += f"<section>{html}</section><hr>"
+                content += f'<section id="{filename}">{html}</section><hr>'
 
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"content": content}
+        context={"content": content, "ical_url": ical_url}
     )
 
 @app.get("/favicon.ico", include_in_schema=False)

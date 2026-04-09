@@ -61,12 +61,8 @@
     </div>
 
     <script>
-        // Dynamické sestavení URL pro ICAL pomocí meta tagu nebo přímého vložení z backendu
-        // Ale můžeme použít i relativní cestu, která bude fungovat díky base tagu nebo správnému zacházení s URL
-        const icalUrl = "{{ url_for('get_ical') }}";
-        // Pokud url_for vrátí relativní cestu, browser ji vyřeší vůči aktuální stránce.
-        // Ale chceme absolutní URL pro kalendářové klienty.
-        const absoluteIcalUrl = window.location.origin + icalUrl;
+        // Použijeme absolutní URL předané přímo z backendu
+        const absoluteIcalUrl = "{{ ical_url }}";
         
         document.getElementById('icalUrl').innerText = absoluteIcalUrl;
 
