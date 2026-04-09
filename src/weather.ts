@@ -8,18 +8,24 @@ const TZ = 'Europe/Prague';
 
 export async function fetchWeather(): Promise<WeatherItem[]> {
   if (!API_KEY) {
+    console.warn('[Weather] No API_KEY configured');
     return [];
   }
 
-  const url = `https://api.openweathermap.org/data/2.5/forecast?id=${CITY_ID}&APPID=${API_KEY}&lang=cz&units=metric`;
+  const url = `https://api.openweathermap.org/data/2.5/forecast?id=${CITY_ID}&APPID=***&lang=cz&units=metric`;
 
   try {
-    const response = await axios.get(url, { timeout: 10000 });
+    console.log(`[Weather] Fetching forecast for city ${CITY_ID}`);
+    const response = await axios.get(
+      `https://api.openweathermap.org/data/2.5/forecast?id=${CITY_ID}&APPID=${API_KEY}&lang=cz&units=metric`,
+      { timeout: 10000 }
+    );
     const data = response.data;
 
     const weatherList: WeatherItem[] = [];
 
     if (!data.list) {
+      console.warn('[Weather] No forecast data in response');
       return [];
     }
 
@@ -39,9 +45,10 @@ export async function fetchWeather(): Promise<WeatherItem[]> {
       }
     }
 
+    console.log(`[Weather] Successfully fetched ${weatherList.length} forecast entries`);
     return weatherList;
   } catch (error) {
-    console.error('Error fetching weather:', error);
+    console.error('[Weather] Error fetching forecast:', error);
     return [];
   }
 }

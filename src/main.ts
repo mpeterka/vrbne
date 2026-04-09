@@ -42,17 +42,10 @@ app.use(cors({
 
 // Request logging middleware
 app.use((req: Request, res: Response, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  console.log(`  Full URL: ${req.protocol}://${req.get('host')}${req.originalUrl}`);
-  console.log(`  Path: ${req.path}`);
-  console.log(`  Query: ${JSON.stringify(req.query)}`);
-  console.log(`  Headers: ${JSON.stringify({
-    'x-forwarded-for': req.get('x-forwarded-for'),
-    'x-forwarded-proto': req.get('x-forwarded-proto'),
-    'x-forwarded-host': req.get('x-forwarded-host'),
-    'x-forwarded-prefix': req.get('x-forwarded-prefix'),
-    'host': req.get('host'),
-  })}`);
+  const protocol = req.get('x-forwarded-proto') || req.protocol;
+  const host = req.get('x-forwarded-host') || req.get('host') || 'unknown';
+  const fullUrl = `${protocol}://${host}${req.originalUrl}`;
+  console.log(`[${new Date().toISOString()}] ${req.method} ${fullUrl}`);
   next();
 });
 
@@ -69,9 +62,11 @@ app.get('/ical', async (req: Request, res: Response) => {
   const cacheKey = `ical_${weatherEnabled}`;
 
   let icalContent = cache.get(cacheKey);
+  const fromCache = !!icalContent;
 
   if (!icalContent) {
     try {
+      console.log(`[iCal] Cache MISS - generating new calendar (weather: ${weatherEnabled})`);
       const events = await scrapper.fetchEvents();
 
       if (weatherEnabled) {
@@ -81,11 +76,14 @@ app.get('/ical', async (req: Request, res: Response) => {
 
       icalContent = icalGen.createIcal(events, weatherEnabled);
       cache.set(cacheKey, icalContent);
+      console.log(`[iCal] Generated ${events.length} events`);
     } catch (error) {
       console.error('Error generating iCal:', error);
       res.status(500).send('Error generating calendar');
       return;
     }
+  } else {
+    console.log(`[iCal] Cache HIT`);
   }
 
   res.setHeader('Content-Type', 'text/calendar');
@@ -101,17 +99,7 @@ app.get('/', async (req: Request, res: Response) => {
     // Get the base URL for static files, considering proxy
     const protocol = req.get('x-forwarded-proto') || req.protocol;
     const host = req.get('x-forwarded-host') || req.get('host') || '';
-    
-    // Pro vrbne - pokud víme, že běžíme pod /vrbne a proxy nám neposílá X-Forwarded-Prefix, ale posílá Host.
-    // Předpokládáme, že root_path by mohl být /vrbne, stejně jako v Python verzi.
-    let prefix = req.get('x-forwarded-prefix') || '';
-    if (!prefix && req.get('x-forwarded-host')) {
-        prefix = '/vrbne';
-    }
-    
-    // Zajistíme, že prefix začíná lomítkem a nekončí jím, pokud to není jen /
-    if (prefix && !prefix.startsWith('/')) prefix = '/' + prefix;
-    if (prefix.endsWith('/') && prefix !== '/') prefix = prefix.slice(0, -1);
+    const prefix = (req.get('x-forwarded-prefix') || '').replace(/\/$/, ''); // Remove trailing slash
 
     const staticUrl = `${protocol}://${host}${prefix}/static`.replace(/\/+/g, '/').replace(':/', '://');
 

@@ -63,11 +63,20 @@
     <script>
         function copyToClipboard() {
             const text = document.getElementById('icalUrl').innerText;
+            const btn = document.querySelector('.btn-copy');
+            const originalText = btn.innerText;
+
             navigator.clipboard.writeText(text).then(() => {
-                const btn = document.querySelector('.btn-copy');
-                const originalText = btn.innerText;
                 btn.innerText = 'Zkopírováno! ✅';
                 btn.style.backgroundColor = '#28a745';
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.backgroundColor = '#007bff';
+                }, 2000);
+            }).catch((err) => {
+                console.error('Chyba při kopírování:', err);
+                btn.innerText = 'Chyba! ❌';
+                btn.style.backgroundColor = '#dc3545';
                 setTimeout(() => {
                     btn.innerText = originalText;
                     btn.style.backgroundColor = '#007bff';

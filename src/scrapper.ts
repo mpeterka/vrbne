@@ -7,17 +7,20 @@ const TZ = 'Europe/Prague';
 
 export async function fetchEvents(): Promise<VrbneEvent[]> {
   try {
+    console.log(`[Scraper] Fetching events from ${URL}`);
     const response = await axios.get(URL, { timeout: 10000 });
     const html = response.data;
     const $ = load(html);
 
     const table = $('.rgMasterTable');
     if (table.length === 0) {
+      console.warn('[Scraper] No table found in response');
       return [];
     }
 
     const tbody = table.find('tbody').last();
     if (tbody.length === 0) {
+      console.warn('[Scraper] No tbody found in table');
       return [];
     }
 
@@ -29,9 +32,10 @@ export async function fetchEvents(): Promise<VrbneEvent[]> {
       events.push(...rowEvents);
     });
 
+    console.log(`[Scraper] Successfully fetched ${events.length} events`);
     return events;
   } catch (error) {
-    console.error('HTTP error fetching events:', error);
+    console.error('[Scraper] Error fetching events:', error);
     return [];
   }
 }
