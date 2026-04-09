@@ -4,8 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, Response as FastAPIResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.datastructures import URL
 import markdown
 import os
+import re
 from datetime import datetime, timedelta
 from cachetools import TTLCache
 import scrapper
@@ -13,6 +15,27 @@ import weather
 import ical_gen
 
 app = FastAPI(title="Vrbné iCal Service")
+
+# Middleware pro podporu X-Forwarded-Prefix (proxy na subpath)
+class ProxyMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Nginx konfigurace v issue_description: location /vrbne/ { proxy_pass $vrbne_backend/; ... }
+        # S proxy_pass končícím lomítkem a location končící lomítkem, nginx ořízne /vrbne/ z cesty.
+        # Pokud chceme, aby FastAPI vědělo o svém mountu, musíme nastavit root_path.
+        
+        forwarded_prefix = request.headers.get("X-Forwarded-Prefix")
+        if forwarded_prefix:
+            request.scope["root_path"] = forwarded_prefix
+        elif "/vrbne/" in request.scope.get("root_path", ""):
+            # Možná je root_path už nastavená přes uvicorn --root-path
+            pass
+
+        # Zajištění, že request.url_for generuje správné URL i při proxy_pass bez prefixu
+        # Pokud jsme za proxy a prefix chybí v cestě, ale víme o něm, FastAPI ho přidá díky root_path.
+        
+        return await call_next(request)
+
+app.add_middleware(ProxyMiddleware)
 
 # Security Middleware pro bezpečnostní hlavičky
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -71,14 +94,26 @@ async def index(request: Request):
     content = ""
     files = ["readme.md", "google.md", "outlook.md"]
     
+    # Získání základní URL pro statické soubory s ohledem na root_path
+    static_url = request.url_for("static", path="").rstrip("/")
+    
     for filename in files:
         path = os.path.join(DOC_DIR, filename)
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
                 md_content = f.read()
                 # Oprava cest k obrázkům pro statické servírování
-                # Používáme relativní cestu k aktuálnímu mountu, aby to fungovalo i za proxy
-                md_content = md_content.replace("](", "](static/")
+                # Hledáme obrázky ve formátu ![alt](cesta) nebo [text](cesta)
+                # a pokud cesta nezačíná http, přidáme static_url
+                def replace_path(match):
+                    prefix = match.group(1)
+                    url = match.group(2)
+                    if url.startswith(("http://", "https://", "/")):
+                        return f"{prefix}({url})"
+                    return f"{prefix}({static_url}/{url})"
+
+                md_content = re.sub(r"(!?\[.*?\])\((.*?)\)", replace_path, md_content)
+                
                 html = markdown.markdown(md_content)
                 content += f"<section>{html}</section><hr>"
 
