@@ -47,19 +47,17 @@ export function createIcal(events: VrbneEvent[], includeWeather: boolean = true)
     const eventIdSource = `${event.date}-${event.time_from}-${event.time_to}`;
     const eventId = crypto.createHash('sha1').update(eventIdSource).digest('hex');
 
-    cal.createEvent({
+    const eventObj = cal.createEvent({
       id: eventId,
       summary,
       description,
-      start: startDt.toJSDate(),
-      end: endDt.toJSDate(),
+      start: startDt,
+      end: endDt,
       // Use the start date of the event as the timestamp (DTSTAMP)
       // to avoid triggering updates in calendar apps just because the generation time changed.
       timestamp: startDt.toJSDate(),
     });
-    // This is a workaround for ical-generator 7.0 not including TZID with toJSDate()
-    // unless explicitly set on the event.
-    (cal.events()[cal.events().length - 1] as any).timezone(TZ);
+    eventObj.timezone(TZ);
   }
 
   return cal.toString();

@@ -107,7 +107,7 @@ app.get('/', async (req: Request, res: Response) => {
     const icalUrl = `${protocol}://${host}${prefix}/ical`.replace(/\/+/g, '/').replace(':/', '://');
     
     // Get absolute URL for favicon
-    const faviconUrl = `${protocol}://${host}${prefix}/favicon.ico`.replace(/\/+/g, '/').replace(':/', '://');
+    const faviconUrl = `${protocol}://${host}${prefix}/favicon.svg`.replace(/\/+/g, '/').replace(':/', '://');
 
     for (const filename of files) {
       const filePath = path.join(DOC_DIR, filename);
@@ -147,7 +147,7 @@ app.get('/', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/favicon.ico', (_req: Request, res: Response) => {
+app.get('/favicon.svg', (_req: Request, res: Response) => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
         <text y=".9em" font-size="90">🌊</text>
