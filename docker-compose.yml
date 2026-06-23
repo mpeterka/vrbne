@@ -1,7 +1,6 @@
-version: '3.8'
-
 services:
   vrbne-app:
+    image: ${APP_IMAGE:-vrbne-app:latest}
     build: .
     container_name: vrbne-app
     environment:
