@@ -1,5 +1,5 @@
 # Stage 1: Dependencies and Build
-FROM node:20-alpine AS builder
+FROM node:22.23.4-alpine AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ COPY templates/ ./templates/
 RUN npm run build
 
 # Stage 2: Final Runtime Image
-FROM node:20-alpine AS runner
+FROM node:22.23.4-alpine AS runner
 
 # Set production environment
 ENV NODE_ENV=production
@@ -35,14 +35,15 @@ RUN apk add --no-cache curl
 COPY package*.json ./
 
 # Install ONLY production dependencies
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 # Copy only built artifacts and necessary assets from builder stage
 # Using --chown during COPY is more efficient than separate RUN chown
 COPY --from=builder --chown=vrbneuser:vrbneuser /app/dist ./dist
 COPY --from=builder --chown=vrbneuser:vrbneuser /app/templates ./templates
 COPY --chown=vrbneuser:vrbneuser doc/ ./doc/
-# Ensure package.json is also owned by the user if needed by npm start
+# Keep application metadata owned by the runtime user
 RUN chown vrbneuser:vrbneuser package.json
 
 # Use non-root user
@@ -56,4 +57,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 EXPOSE 8000
 
 # Start application using the production build
-CMD ["npm", "start"]
+CMD ["node", "dist/main.js"]
