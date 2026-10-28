@@ -28,8 +28,7 @@
     "ical-generator": "~7.0",
     "luxon": "~3.4",
     "markdown-it": "~14.3.3",
-    "node-cache": "~5.1",
-    "uuid": "~9.0"
+    "node-cache": "~5.1"
   },
   "devDependencies": {
     "@types/cheerio": "~0.22",
@@ -39,7 +38,6 @@
     "@types/markdown-it": "~14.1",
     "@types/node": "~20.12",
     "@types/node-cache": "~4.1",
-    "@types/uuid": "~9.0",
     "nodemon": "~3.1",
     "ts-node": "~10.9",
     "typescript": "~5.4"
